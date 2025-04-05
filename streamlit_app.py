@@ -11,10 +11,10 @@ import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 from statsmodels.tsa.stattools import acf, pacf
 
+st.set_page_config(page_title="AR(3) PACF教学工具", layout="wide")
 # --------------------------
 # 显示自相关与偏自相关公式表
 # --------------------------
-
 
 def display_formula_table():
     """展示自相关与偏自相关的公式对比"""
@@ -29,7 +29,6 @@ def display_formula_table():
     \cdots & \cdots 
     \end{array}
     """)
-
 
 # --------------------------
 # 时间序列生成函数
@@ -61,7 +60,6 @@ def theoretical_pacf(phi1, phi2, phi3):
     pacf3 = phi3  # 直接取AR(3)系数
 
     return [pacf1, pacf2, pacf3]
-
 
 # --------------------------
 # ACF计算部分
@@ -217,69 +215,69 @@ def create_comparison_table(ar_coefs, sample_data, manual_pacf):
 # --------------------------
 # Streamlit布局
 # --------------------------
+def main():
+    st.title("📊 AR(3) PACF 交互式分析工具")
+    st.write("这是一个时间序列的自相关分析工具。")
+    st.sidebar.header("⚙️ 模型参数设置")
 
-# 页面设置
-st.set_page_config(page_title="AR(3) PACF教学工具", layout="wide")
+    # 参数输入
+    phi1 = st.sidebar.slider("φ₁ (滞后 1 阶系数)", -1.0, 1.0, 0.7, step=0.05)
+    phi2 = st.sidebar.slider("φ₂ (滞后 2 阶系数)", -1.0, 1.0, -0.4, step=0.05)
+    phi3 = st.sidebar.slider("φ₃ (滞后 3 阶系数)", -1.0, 1.0, 0.2, step=0.05)
+    n_samples = st.sidebar.number_input("样本数量",
+                                        min_value=100,
+                                        max_value=5000,
+                                        value=500,
+                                        step=100)
 
-st.title("📊 AR(3) 模型偏自相关系数(PACF)可视化工具")
+    # 数据生成与计算
+    ar3_data = generate_ar3_process(phi1, phi2, phi3, n_samples)
+    manual_pacf_values, residual_df = manual_pacf(ar3_data)
+    acf_values = calculate_acf(ar3_data)  # 计算ACF
 
-st.sidebar.header("⚙️ 模型参数设置")
-
-# 参数输入
-phi1 = st.sidebar.slider("φ₁ (滞后 1 阶系数)", -1.0, 1.0, 0.7, step=0.05)
-phi2 = st.sidebar.slider("φ₂ (滞后 2 阶系数)", -1.0, 1.0, -0.4, step=0.05)
-phi3 = st.sidebar.slider("φ₃ (滞后 3 阶系数)", -1.0, 1.0, 0.2, step=0.05)
-n_samples = st.sidebar.number_input("样本数量",
-                                    min_value=100,
-                                    max_value=5000,
-                                    value=500,
-                                    step=100)
-
-# 数据生成与计算
-ar3_data = generate_ar3_process(phi1, phi2, phi3, n_samples)
-manual_pacf_values, residual_df = manual_pacf(ar3_data)
-acf_values = calculate_acf(ar3_data)  # 计算ACF
-
-st.subheader("AR(3) 时间序列可视化")
-fig, ax = plt.subplots(figsize=(10, 4))
-ax.plot(ar3_data, color='steelblue', linewidth=0.8, alpha=0.8)
-ax.set_title(f"Generated AR(3) Series: φ1={phi1}, φ2={phi2}, φ3={phi3}",
-             fontsize=12)
-ax.set_xlabel("Time Step")
-ax.set_ylabel("Value")
-ax.grid(alpha=0.3)
-st.pyplot(fig)
-
-display_formula_table()
-
-# 可视化
-st.subheader("ACF值与PACF值对比")
-for lag in range(1, 4):
-    # 准备原始数据
-    raw_data = pd.DataFrame({
-        'X_t': ar3_data[lag:],
-        f'X_t-{lag}': ar3_data[:-lag]
-    })
-
-    # 绘制图表
-    fig = create_scatter_plots(raw_data, residual_df, lag,
-                               manual_pacf_values[lag - 1],
-                               acf_values[lag - 1])
+    st.subheader("AR(3) 时间序列可视化")
+    fig, ax = plt.subplots(figsize=(10, 4))
+    ax.plot(ar3_data, color='steelblue', linewidth=0.8, alpha=0.8)
+    ax.set_title(f"Generated AR(3) Series: φ1={phi1}, φ2={phi2}, φ3={phi3}",
+                fontsize=12)
+    ax.set_xlabel("Time Step")
+    ax.set_ylabel("Value")
+    ax.grid(alpha=0.3)
     st.pyplot(fig)
 
-# 显示对比表格
-st.subheader("PACF 值对比")
-styled_table = create_comparison_table(ar_coefs=(phi1, phi2, phi3),
-                                       sample_data=ar3_data,
-                                       manual_pacf=manual_pacf_values)
-st.dataframe(styled_table, use_container_width=True)
+    display_formula_table()
 
-# 使用说明
-st.markdown("""
-### 使用说明
-1. 修改左侧边栏以调整模型参数
-2. 每个滞后阶数都会生成两个图：
-   - 原始数据的AFC散点图
-   - 残差数据的PACF散点图
-3. 拟合直线显示了两个变量之间的趋势关系
-""")
+    # 可视化
+    st.subheader("ACF值与PACF值对比")
+    for lag in range(1, 4):
+        # 准备原始数据
+        raw_data = pd.DataFrame({
+            'X_t': ar3_data[lag:],
+            f'X_t-{lag}': ar3_data[:-lag]
+        })
+
+        # 绘制图表
+        fig = create_scatter_plots(raw_data, residual_df, lag,
+                                manual_pacf_values[lag - 1],
+                                acf_values[lag - 1])
+        st.pyplot(fig)
+
+    # 显示对比表格
+    st.subheader("PACF 值对比")
+    styled_table = create_comparison_table(ar_coefs=(phi1, phi2, phi3),
+                                        sample_data=ar3_data,
+                                        manual_pacf=manual_pacf_values)
+    st.dataframe(styled_table, use_container_width=True)
+
+    # 使用说明
+    st.markdown("""
+    ### 使用说明
+    1. 修改左侧边栏以调整模型参数
+    2. 每个滞后阶数都会生成两个图：
+    - 原始数据的AFC散点图
+    - 残差数据的PACF散点图
+    3. 拟合直线显示了两个变量之间的趋势关系
+    """)
+
+if __name__ == "__main__":
+    main()
